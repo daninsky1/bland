@@ -1,0 +1,43 @@
+#!/bin/sh
+
+install() {
+    if [ ! -f /etc/apt/keyrings/packages.microsoft.gpg ] || [ ! -f /usr/share/keyrings/microsoft.gpg ]; then
+        [ -f /etc/apt/keyrings/packages.microsoft.gpg ] && sudo rm /etc/apt/keyrings/packages.microsoft.gpg
+        cd /tmp
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor >packages.microsoft.gpg
+        sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list >/dev/null
+        rm -f packages.microsoft.gpg
+        cd -
+    fi
+
+    sudo apt update
+    sudo apt install -y code
+}
+
+uninstall() {
+    sudo apt remove -y code
+    sudo rm -f /etc/apt/sources.list.d/vscode.list
+    sudo rm -f /etc/apt/keyrings/packages.microsoft.gpg
+    sudo rm -f /usr/share/keyrings/microsoft.gpg
+    sudo apt update
+}
+
+usage() {
+    echo "Usage: $0 -i | -u"
+    echo "  -i  Install $0"
+    echo "  -u  Uninstall $0"
+    exit 1
+}
+
+case "$1" in
+    -i)
+        install
+        ;;
+    -u)
+        uninstall
+        ;;
+    *)
+        usage
+        ;;
+esac

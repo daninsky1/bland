@@ -1,33 +1,34 @@
 #!/bin/sh
 
-# depends on jq, curl, grep, awk
-
-# Parse page to get public download link code and download hash
-DOWNLOAD_PAGE_URL="https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64"
-DOWNLOAD_PAGE_RESPONSE="$(curl -sfL "$DOWNLOAD_PAGE_URL")"
-DOWNLOAD_METADATA="$(echo "$DOWNLOAD_PAGE_RESPONSE" | \
-    grep "'Electron'" | \
-    awk -F"'" '{ print $4 }')"
-# printf to mitigate inconsistency echo \n handling
-GET_PUB_LINK_CODE="$(printf '%s\n' "$DOWNLOAD_METADATA" | head -n1)"
-PROVIDER_SHA256SUM="$(printf '%s\n' "$DOWNLOAD_METADATA" | tail -n1)"
-[ -n "$GET_PUB_LINK_CODE" ] || { echo "No publink code"; exit 1; }
-[ -n "$PROVIDER_SHA256SUM" ] || { echo "No SHA256"; exit 1; }
-
-# parse download url
-GET_PUB_LINK_URL="https://api.pcloud.com/getpublinkdownload?code=$GET_PUB_LINK_CODE"
-GET_PUB_LINK_RESPONSE="$(curl -sfL "$GET_PUB_LINK_URL")"
-PCLOUD_HOST="$(printf '%s\n' "$GET_PUB_LINK_RESPONSE" | jq -r '.hosts[0]')"
-PCLOUD_PATH_API="$(printf '%s\n' "$GET_PUB_LINK_RESPONSE" | jq -r '.path')"
-
-[ -n "$PCLOUD_HOST" ] || { echo "No host"; exit 1; }
-[ -n "$PCLOUD_PATH_API" ] || { echo "No path"; exit 1; }
-
-DOWNLOAD_URL="https://$PCLOUD_HOST$PCLOUD_PATH_API"
 BIN_DIR="${HOME}/opt/pcloud"
 BIN_PATH="${BIN_DIR}/pcloud"
 
-install_pcloud() {
+install() {
+    # depends on jq, curl, grep, awk
+
+    # Parse page to get public download link code and download hash
+    DOWNLOAD_PAGE_URL="https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64"
+    DOWNLOAD_PAGE_RESPONSE="$(curl -sfL "$DOWNLOAD_PAGE_URL")"
+    DOWNLOAD_METADATA="$(echo "$DOWNLOAD_PAGE_RESPONSE" | \
+        grep "'Electron'" | \
+        awk -F"'" '{ print $4 }')"
+    # printf to mitigate inconsistency echo \n handling
+    GET_PUB_LINK_CODE="$(printf '%s\n' "$DOWNLOAD_METADATA" | head -n1)"
+    PROVIDER_SHA256SUM="$(printf '%s\n' "$DOWNLOAD_METADATA" | tail -n1)"
+    [ -n "$GET_PUB_LINK_CODE" ] || { echo "No publink code"; exit 1; }
+    [ -n "$PROVIDER_SHA256SUM" ] || { echo "No SHA256"; exit 1; }
+
+    # parse download url
+    GET_PUB_LINK_URL="https://api.pcloud.com/getpublinkdownload?code=$GET_PUB_LINK_CODE"
+    GET_PUB_LINK_RESPONSE="$(curl -sfL "$GET_PUB_LINK_URL")"
+    PCLOUD_HOST="$(printf '%s\n' "$GET_PUB_LINK_RESPONSE" | jq -r '.hosts[0]')"
+    PCLOUD_PATH_API="$(printf '%s\n' "$GET_PUB_LINK_RESPONSE" | jq -r '.path')"
+
+    [ -n "$PCLOUD_HOST" ] || { echo "No host"; exit 1; }
+    [ -n "$PCLOUD_PATH_API" ] || { echo "No path"; exit 1; }
+
+    DOWNLOAD_URL="https://$PCLOUD_HOST$PCLOUD_PATH_API"
+
     # Kill any running instance of pCloud from a previous installation
     killall pcloud 2>/dev/null || true
 
@@ -55,7 +56,7 @@ install_pcloud() {
     printf "\npCloud installed and running."
 }
 
-uninstall_pcloud() {
+uninstall() {
     # Use 'apt autoremove' to remove libfuse2t64 if no other package depends
     # on it
     # when the pcloud AppImage binary is deleted magically the autostart from
@@ -85,17 +86,17 @@ check_hash() {
 
 usage() {
     echo "Usage: $0 -i | -u"
-    echo "  -i  Install pCloud"
-    echo "  -u  Uninstall pCloud"
+    echo "  -i  Install $0"
+    echo "  -u  Uninstall $0"
     exit 1
 }
 
 case "$1" in
     -i)
-        install_pcloud
+        install
         ;;
     -u)
-        uninstall_pcloud
+        uninstall
         ;;
     *)
         usage
