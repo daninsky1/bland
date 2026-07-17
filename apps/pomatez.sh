@@ -1,11 +1,11 @@
 #!/bin/bash
 
 install() {
-    sudo apt install -y remmina
+    sudo snap install pomatez
 }
 
 uninstall() {
-    sudo apt remove -y remmina
+    sudo snap remove pomatez
 }
 
 usage() {

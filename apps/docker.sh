@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 install() {
-    sudo apt install -y remmina
+    sudo apt install -y docker.io
 }
 
 uninstall() {
-    sudo apt remove -y remmina
+    sudo apt remove -y docker.io
 }
 
 usage() {

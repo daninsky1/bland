@@ -14,9 +14,12 @@
 # distrobox-host-exec to open vscode on host and open browser to login on
 # github and sync
 
+# Select container preferably podman
+# echo 'container_manager="podman"' > ~/.config/distrobox/distrobox.conf
+
 install() {
     wget -qO- https://raw.githubusercontent.com/89luca89/distrobox/main/install | sudo sh
-    sudo apt install -y podman flatpak
+    sudo apt install -y podman crun flatpak
 }
 
 uninstall() {

@@ -1,11 +1,11 @@
 #!/bin/bash
 
 install() {
-    sudo apt install -y remmina
+    sudo apt install -y libreoffice
 }
 
 uninstall() {
-    sudo apt remove -y remmina
+    sudo apt remove -y libreoffice
 }
 
 usage() {

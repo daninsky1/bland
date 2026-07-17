@@ -1,13 +1,14 @@
 #!/bin/sh
 
+DOWNLOAD_PAGE_URL="https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64"
 BIN_DIR="${HOME}/opt/pcloud"
 BIN_PATH="${BIN_DIR}/pcloud"
+PROVIDER_SHA256SUM=
 
 install() {
     # depends on jq, curl, grep, awk
 
     # Parse page to get public download link code and download hash
-    DOWNLOAD_PAGE_URL="https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64"
     DOWNLOAD_PAGE_RESPONSE="$(curl -sfL "$DOWNLOAD_PAGE_URL")"
     DOWNLOAD_METADATA="$(echo "$DOWNLOAD_PAGE_RESPONSE" | \
         grep "'Electron'" | \
@@ -39,20 +40,20 @@ install() {
 
     sudo apt install -y libfuse2t64
     mkdir -p "$BIN_DIR"
-    
+
     # Download
-    curl -sfL --progress-bar -o "$BIN_PATH" "$DOWNLOAD_URL" || {
+    curl -fL --progress-bar -o "$BIN_PATH" "$DOWNLOAD_URL" || {
         echo "Download failed"
         exit 1
     }
 
-    check_hash
-    
+    check_hash "$PROVIDER_SHA256SUM"
+
     # Running the AppImage for the first time automatically creates
     # a .desktop entry and a user systemd startup entry.
     chmod +x "$BIN_PATH"
     nohup "$BIN_PATH" > /dev/null 2>&1 &
-    
+
     printf "\npCloud installed and running."
 }
 
@@ -66,22 +67,24 @@ uninstall() {
 }
 
 check_hash() {
-    echo "Verifying SHA256…"
-    # Looks like sha256sum expect stdin in this format <hash><two spaces><file>
-    # I don't know why, maybe a Unix command chaining thing
-    echo "$PROVIDER_SHA256SUM  pcloud.AppImage" | sha256sum -c -
+    expected_sha256sum="$1"
 
-    if [ -z "$PROVIDER_SHA256SUM" ]; then
+    echo "Verifying SHA256…"
+    if [ -z "$expected_sha256sum" ]; then
         echo "Failed to extract SHA256 from pCloud page"
         exit 1
     fi
 
-    echo "hash: $PROVIDER_SHA256SUM, $BIN_PATH"
-
-    if ! echo "$PROVIDER_SHA256SUM  $BIN_PATH" | sha256sum -c -; then
+    # Looks like sha256sum expect stdin in this format <hash><two spaces><file>
+    # I don't know why, maybe a Unix command chaining thing
+    if ! echo "$expected_sha256sum  $BIN_PATH" | sha256sum -c -; then
+        echo "$expected_sha256sum"
+        sha256sum "$BIN_PATH"
         rm -f "$BIN_PATH"
         exit 1
     fi
+
+    echo "hash: $expected_sha256sum, $BIN_PATH"
 }
 
 usage() {
